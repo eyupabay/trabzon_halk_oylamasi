@@ -10,6 +10,19 @@ class Poll {
 
         this._refresh();
     }
+    /* async addQuestion(question, options) {
+        const response = await fetch(`${this.endpoint}/questions`, {
+          method: 'post',
+          body: JSON.stringify({
+            question: question,
+            options: options
+          }),
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        return response.json();
+      }    */   
 
     async _refresh(){
         const response = await fetch(this.endpoint);
@@ -61,5 +74,9 @@ const p = new Poll(
     document.querySelector(".poll"),
     "Memnun musunuz?"
 );
+/* const p = new Poll(document.querySelector(".poll"));
+p.addQuestion('Yeni soru', ['Seçenek 1', 'Seçenek 2', 'Seçenek 3']).then(response => {
+    console.log(response);
+  }); */
 
 console.log(p);
