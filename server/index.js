@@ -18,10 +18,10 @@ app.use((req, res, next) => {
 
 app.get("/poll", async (req, res) => {
     // data : oylamadaki şıklar ve sayı bilgileri
-    // toplamOy : oylamada kullanılan oy sayısı (totalVotes)
-    // secenek : olan şıklar (label)
-    // oy : o seçeneğe ait olan oy (votes)
-    // yuzdelik (percentage)
+    // toplamOy : oylamada kullanılan oy sayısı
+    // secenek : olan şıklar
+    // oy : o seçeneğe ait olan oy
+    // yuzdelik 
 
     let data = JSON.parse(await fs.readFile(dataFile, "utf-8"));
     const toplamOy = Object.values(data).reduce((toplam, n) => toplam += n, 0);
