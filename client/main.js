@@ -58,18 +58,10 @@ class Poll {
        */
 
     async _refresh(){
-
         
         const response = await fetch(this.endpoint);
         const data = await response.json();
-        const pollRef = db.collection(anketSorulari).doc(gundemSorusu).collection("Bilgiler");
-
-        /* for (var i = 0; i < soruSecenekleri.length; i++){
-            pollRef.set(soruSecenekleri[i]);
-        } */
-        
-        const snapshot = await pollRef.get();
-        
+        const pollRef = db.collection(anketSorulari).doc(gundemSorusu).collection("Seçenekler");
 
         this.root.querySelectorAll(".poll__option").forEach(option => {
             option.remove();
@@ -111,7 +103,7 @@ class Poll {
                         Verilen oylamanın daha sonra da tutulmasını sağlar 
                         */
                         sessionStorage.setItem("poll-selected", option.secenek);
-                        console.log(`Şu seçenek işaretlenmiştir : ${p.selected} \nBu bilgi Firebase veritabanına eklenmiştir.`);
+                        console.log(`Şu seçenek işaretlenmiştir : ${ p.selected } \nBu bilgi Firebase veritabanına eklenmiştir.`);
 
                         this._refresh();
                     })
@@ -129,20 +121,60 @@ const p = new Poll(
     gundemSorusu,
 
 );
-/* const p = new Poll(document.querySelector(".poll"));
-p.addQuestion('Yeni soru', ['Seçenek 1', 'Seçenek 2', 'Seçenek 3']).then(response => {
-    console.log(response);
-  }); */
+
+ 
 
 console.log(p);
 
-var soruSecenekleri;
+db.collection(anketSorulari).doc(gundemSorusu).collection("Seçenekler").get().then((querySnapshot) => {
+    console.log("Firebase verileri okunuyor...");
+    let cevaplar = [];
 
-db.collection("Anket Soruları").doc("Memnun musunuz?").collection("Seçenekler").get().then((querySnapshot) => {
-    
     querySnapshot.forEach((doc) => {
-        console.log(doc.data().cevap);
+        cevaplar.push({ ...doc.data(), id:doc.id });
+        //doc.id dediğimiz şey: dökümana verdiğimiz isim.
+    });
+    console.log(cevaplar);
+    console.log(cevaplar[2].yapilanOySayisi, cevaplar[2].cevap);
+});
+
+
+// Anket Ekleme metodu
+const anketEkleme = document.querySelector('.add')
+anketEkleme.addEventListener('submit', (e) => {
+    e.preventDefault()
+    const anketSorusu = anketEkleme.anketSorusu.value;
+    let docID = "";
+    // Daha sonra bu dökümana girip şıkları eklemek için anketSorusu değişkeni ile tutuyoruz
+
+    db.collection(anketSorulari).add({
+        anketSorusu: anketSorusu,
+    }).then((docRef) => {
+        docID = docRef.id
+        anketEkleme.reset()
+        // Eklendiği zaman kutucuklardaki yazıları temizler
+        console.log("Anket sorusu başarılı bir şekilde eklendi")
+        console.log(docID)
+
+    })
+   // gundemSorusu = anketSorusu;
+})
+
+
+/* 
+// Silme metodu
+const anketSilme = document.querySelector('.delete')
+anketSilme.addEventListener('submit', (e) => {
+    e.preventDefault()
+})
+ */
+
+/* db.collection(anketSorulari).doc(gundemSorusu).collection("Seçenekler").get().then((querySnapshot) => {
+    console.log("Firebase verileri okunuyor...");
+    querySnapshot.forEach((doc) => {
+        console.log(doc.data());
         console.log(doc.data().yapilanOySayisi);
+        console.log(doc.data().cevap);
 
     });
-});
+}); */
