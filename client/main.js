@@ -7,76 +7,66 @@ firebase.initializeApp({
   messagingSenderId: "329288543990",
   appId: "1:329288543990:web:47ec50f59ee2795cd986d7"
 });
+
 const db = firebase.firestore();
 
-var anketSorulari = "Anket Soruları";
-var gundemSorusu = "Memnun musunuz?";
-/* var soruSecenekleri = [
-    "Evet",
-    "Hayır",
-    "Bilmiyorum"
-];
- */
+let anketSorulari = "Anket Soruları";
+let gundemSorusu;
+
 class Poll {
-    constructor(root, title){
+    constructor(root){
         this.root = root;
         this.selected = sessionStorage.getItem("poll-selected");
         this.endpoint = "http://localhost:3000/poll";
 
-        this.root.insertAdjacentHTML("afterbegin",`
-            <div class="poll__title">${title} </div>
-        `);
+        this.getSurveyQuestion().then((surveyQuestion) => {
+            this.root.insertAdjacentHTML("afterbegin",`
+                <div class="poll__title">${surveyQuestion} </div>
+            `);
+        });
 
         this._refresh();
     }
-    /* async addQuestion(question, options) {
-        const response = await fetch(`${this.endpoint}/questions`, {
-          method: 'post',
-          body: JSON.stringify({
-            question: question,
-            options: options
-          }),
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        return response.json();
 
-        
-      }    */   
-
-/*       async addQuestion(question, options) {
-        // Firestore veritabanınıza bir yeni "soru" dokümanı ekleyin
-        await db.collection("sorular").add({
-          question: question,
-          options: options
-        });
-      
-        // Bu işlem başarılı olursa, bir onay mesajı döndürün
-        return "Soru başarıyla eklendi!";
-      }
-       */
-
+    async getSurveyQuestion() {
+        const surveyRef = db.collection(anketSorulari);
+        const snapshot = await surveyRef.get();
+        const survey = snapshot.docs[0].data();
+        return survey.anketSorusu;
+    }
+    
     async _refresh(){
         
         const response = await fetch(this.endpoint);
         const data = await response.json();
-        const pollRef = db.collection(anketSorulari).doc(gundemSorusu).collection("Seçenekler");
+        const pollRef2 = db.collection(anketSorulari).doc("wbzgYF9lgT9pehURSf2P").collection("Seçenekler");
+
+        // seceneklerin yapilanOySayisi ' ni da çek
+        const snapshot = await pollRef2.get();
+        const options = [];
+        snapshot.forEach((doc) => {
+            options.push(doc.data());
+        });
+
+        let toplamOySayisi = 0;
+        for(const option of options){
+            toplamOySayisi += option.yapilanOySayisi
+        }
 
         this.root.querySelectorAll(".poll__option").forEach(option => {
             option.remove();
         });
         
-        for(const option of data){
+        for(const option of options){
             const template = document.createElement("template");
             const fragment = template.content;
-
+            
             template.innerHTML = `
                 <div class="poll__option ${this.selected == option.secenek ? "poll__option--selected" : "" } ">
                     <div class="poll__option-fill"></div>
                     <div class="poll__option-info">
                         <span class="poll__secenek">${ option.secenek }</span>
-                        <span class="poll__yuzdelik">%${ option.yuzdelik }</span>
+                        <span class="poll__yuzdelik">%${ (((option.yapilanOySayisi/toplamOySayisi)*100) || 0).toFixed(0) }</span>
                     </div>
                 </div>
             `;
@@ -95,23 +85,31 @@ class Poll {
                             "Content-Type": "application/x-www-form-urlencoded"
                         }
                     }, 
+                    
                     // Firebase'e ekleme metodu olarak .update yaptığım için, seçeneklerin önceden eklenmiş olması gerekiyor.
-                    pollRef.doc(option.secenek).update({yapilanOySayisi: firebase.firestore.FieldValue.increment(1)})).then(() => {
+               /*      pollRef.doc(option.secenek).update({yapilanOySayisi: firebase.firestore.FieldValue.increment(1)})).then(() => {
                         this.selected = option.secenek;
 
-                        /* 
-                        Verilen oylamanın daha sonra da tutulmasını sağlar 
-                        */
+                        
+                        // Verilen oylamanın daha sonra da tutulmasını sağlar 
+                        
                         sessionStorage.setItem("poll-selected", option.secenek);
                         console.log(`Şu seçenek işaretlenmiştir : ${ p.selected } \nBu bilgi Firebase veritabanına eklenmiştir.`);
 
                         this._refresh();
-                    })
+ */
+                        
+                        pollRef2.doc(option.secenek).update({yapilanOySayisi: firebase.firestore.FieldValue.increment(1)}).then(() => {
+                            this.selected = option.secenek;
+    
+                            sessionStorage.setItem("poll-selected", option.secenek);
+                            console.log(`Şu seçenek işaretlenmiştir : ${ p.selected } \nBu bilgi Firebase veritabanına eklenmiştir.`);
+    
+                            this._refresh();
+                        }))
                 });
             }
-
-            fragment.querySelector(".poll__option-fill").style.width = `${ option.yuzdelik }%`;
-
+            fragment.querySelector(".poll__option-fill").style.width = `${ (((option.yapilanOySayisi/toplamOySayisi)*100) || 0).toFixed(0) }%`;
             this.root.appendChild(fragment);
         }
     }
@@ -119,13 +117,11 @@ class Poll {
 const p = new Poll(
     document.querySelector(".poll"),
     gundemSorusu,
-
 );
 
- 
 
 console.log(p);
-
+/* 
 db.collection(anketSorulari).doc(gundemSorusu).collection("Seçenekler").get().then((querySnapshot) => {
     console.log("Firebase verileri okunuyor...");
     let cevaplar = [];
@@ -137,7 +133,7 @@ db.collection(anketSorulari).doc(gundemSorusu).collection("Seçenekler").get().t
     console.log(cevaplar);
     console.log(cevaplar[2].yapilanOySayisi, cevaplar[2].cevap);
 });
-
+ */
 
 // Anket Ekleme metodu
 const anketEkleme = document.querySelector('.add')
@@ -154,11 +150,13 @@ anketEkleme.addEventListener('submit', (e) => {
         anketEkleme.reset()
         // Eklendiği zaman kutucuklardaki yazıları temizler
         console.log("Anket sorusu başarılı bir şekilde eklendi")
-        console.log(docID)
-
+        console.log(docID) // Döküman ID'sini tutuyoruz, daha sonra şıklarını da eklemek için.
     })
    // gundemSorusu = anketSorusu;
-})
+}) 
+
+
+// Bulma metodu
 
 
 /* 
