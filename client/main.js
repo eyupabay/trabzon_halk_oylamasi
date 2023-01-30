@@ -37,12 +37,14 @@ class Poll {
     
     async _refresh(){
         
+        /* 
         const response = await fetch(this.endpoint);
         const data = await response.json();
-        const pollRef2 = db.collection(anketSorulari).doc("wbzgYF9lgT9pehURSf2P").collection("Seçenekler");
+        */ 
+       const pollRef = db.collection(anketSorulari).doc("wbzgYF9lgT9pehURSf2P").collection("Seçenekler");
 
         // seceneklerin yapilanOySayisi ' ni da çek
-        const snapshot = await pollRef2.get();
+        const snapshot = await pollRef.get();
         const options = [];
         snapshot.forEach((doc) => {
             options.push(doc.data());
@@ -78,16 +80,21 @@ class Poll {
                     değişkeninde belirtilen URL'ye POST isteği gönderir. 
                     İstek içerisinde "add" değişkeni ile oy verilen seçenek bilgisi ile birlikte gönderilmektedir. 
                     */
-                    fetch(this.endpoint, {
+                   
+                    fetch(
+
+                        /* 
+                        this.endpoint, {
                         method: "post",
                         body: `add=${ option.secenek }`,
                         headers: {
                             "Content-Type": "application/x-www-form-urlencoded"
                         }
-                    }, 
+                    },  
+                    */
                     
                     // Firebase'e ekleme metodu olarak .update yaptığım için, seçeneklerin önceden eklenmiş olması gerekiyor.
-               /*      pollRef.doc(option.secenek).update({yapilanOySayisi: firebase.firestore.FieldValue.increment(1)})).then(() => {
+               /*      pollRef2.doc(option.secenek).update({yapilanOySayisi: firebase.firestore.FieldValue.increment(1)})).then(() => {
                         this.selected = option.secenek;
 
                         
@@ -99,7 +106,7 @@ class Poll {
                         this._refresh();
  */
                         
-                        pollRef2.doc(option.secenek).update({yapilanOySayisi: firebase.firestore.FieldValue.increment(1)}).then(() => {
+                        pollRef.doc(option.secenek).update({yapilanOySayisi: firebase.firestore.FieldValue.increment(1)}).then(() => {
                             this.selected = option.secenek;
     
                             sessionStorage.setItem("poll-selected", option.secenek);
